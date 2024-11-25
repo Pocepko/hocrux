@@ -74,16 +74,18 @@ def split(data: IntData, n: int, threshold: int) -> list[IntData]:
     return parts
 
 
-def split_command(path: str, n: int, threshold: int) -> None:
-
-    data = IntData(path)
-
-    parts = split(data, n, threshold)
-
+def split_path(path: str) -> tuple[str, str]:
     path_parts = path.split('/')
     file_name = path_parts[-1]
     dirr = '/'.join(path_parts[:-1])
 
+    if len(dirr) == 0:
+        dirr = '.'
+
+    return (dirr, file_name)
+
+
+def split_file_name(file_name: str) -> tuple[str, str]:
     pref = file_name
     suf = ''
 
@@ -91,6 +93,19 @@ def split_command(path: str, n: int, threshold: int) -> None:
         name_parts = file_name.split('.')
         suf = name_parts[-1]
         pref = '.'.join(name_parts[:-1])
+
+    return (pref, suf)
+
+
+def split_command(path: str, n: int, threshold: int) -> None:
+
+    data = IntData(path)
+
+    parts = split(data, n, threshold)
+
+    dirr, file_name = split_path(path)
+
+    pref, suf = split_file_name(file_name)
 
     for i, part in enumerate(parts):
         new_path = ""
@@ -123,18 +138,16 @@ def bind(parts: list[IntData], threshold: int) -> IntData:
 
 def bind_command(path: str, threshold: int) -> None:
 
-    path_parts = path.split('/')
-    file_pref = path_parts[-1]
-    dirr = '/'.join(path_parts[:-1])
+    dirr, file_pref = split_path(path)
 
     parts = []
 
-    if len(dirr) == 0:
-        dirr = '.'
+    file_suf = ''
 
     with os.scandir(dirr) as entries:
         for entry in entries:
             if entry.is_file() and entry.name.startswith(file_pref):
+                file_suf = split_file_name(entry.name)[1]
                 with open(dirr + '/' + entry.name, 'rb') as file:
                     parts.append(pickle.load(file))
 
@@ -143,6 +156,9 @@ def bind_command(path: str, threshold: int) -> None:
         sys.exit(1)
 
     data = bind(parts[:threshold], threshold)
+
+    if (len(file_suf) > 0):
+        path += '.' + file_suf
 
     with open(path, mode="wb") as file:
         file.write(data.to_bytes())
