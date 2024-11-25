@@ -4,17 +4,14 @@ import random
 import copy
 import os
 
-class IntData:
-    '''
-    def __init__(self, data):
-        self.bytes_count = len(data)
-        self.numbers = []
-        for i in range(0, len(data), 4):
-            self.numbers.append(int.from_bytes(data[i:i + 4],
-                                byteorder='little'))
-    '''
+from polynomial import Polynomial
 
-    def __init__(self, path):
+
+class IntData:
+    '''This class stores file data as a list of four byte numbers
+    and associated information for later file recovery.'''
+
+    def __init__(self, path: str) -> None:
         self.x_val = 0
         with open(path, mode="rb") as file:
             data = file.read()
@@ -24,8 +21,9 @@ class IntData:
                 self.numbers.append(int.from_bytes(data[i:i + 4],
                                     byteorder='little'))
 
+    def to_bytes(self) -> bytes:
+        '''This method restores the contents of the file in binary form.'''
 
-    def to_bytes(self):
         res = bytes()
         bytes_list = []
         for i in range(len(self.numbers) - 1):
@@ -33,150 +31,28 @@ class IntData:
         n = len(self.numbers) - 1
 
         bytes_list.append(self.numbers[-1].to_bytes(self.bytes_count - n * 4,
-        #bytes_list.append(self.numbers[-1].to_bytes(4,
-
                                                     byteorder='little'))
         res = res.join(bytes_list)
         return res
 
-    def get_int(self, ind):
+    def get_int(self, ind: int) -> int:
         return self.numbers[ind]
 
-    def set_int(self, ind, val):
+    def set_int(self, ind: int, val: int) -> None:
         self.numbers[ind] = val
 
-    def get_ints(self):
+    def get_ints(self) -> list[int]:
         return self.numbers
 
-    def get_x_val(self):
+    def get_x_val(self) -> int:
         return self.x_val
 
-    def set_x_val(self, val):
+    def set_x_val(self, val: int) -> None:
         self.x_val = val
 
-    def write(self):
-        print(f'bytes_count = {self.bytes_count}')
-        print(f'x_val = {self.x_val}')
-        for i in self.numbers:
-            print(i)
-        print()
 
-'''
-def read_file(path):
-    with open(path, mode="rb") as file:
-        data = file.read()
-    data = FileData(data)
-    return data
-'''
-
-'''
-def write_file(path, data):
-    with open(path, mode="wb") as file:
-        file.write(data.to_bytes())
-'''
-
-# 2^32 - 1 = 4294967295
-# 4294967311
-# polynomial
-
-MAX_INT = 2 ** 32 - 1
-MOD = 4294967311
-
-def bin_pow(a, n):
-    res = 1
-    while n > 0:
-        if n % 2 == 1:
-            res *= a
-            res %= MOD
-        a *= a
-        a %= MOD
-        n //= 2
-    return res
-
-
-def inverse(a):
-    return bin_pow(a, MOD - 2)
-
-
-class Polynomial:
-
-    def __init__(self, coefficients=[], rand=False, degree=0):
-        if rand:
-            self.coefficients = []
-            self.degree = degree
-            for i in range(degree + 1):
-                self.coefficients.append(random.randint(0, MAX_INT))
-        else:
-            self.coefficients = coefficients
-            self.degree = len(coefficients) - 1
-
-    def __call__(self, x):
-        res = 0
-        x_pow = 1
-        for a in self.coefficients:
-            res += x_pow * a
-            res %= MOD
-            x_pow *= x
-            x_pow %= MOD
-        return res
-
-    def __add__(self, other):
-        coefficients = copy.copy(self.coefficients)
-
-        if len(coefficients) < len(other.coefficients):
-            coefficients = copy.copy(other.coefficients)
-            for i, val in enumerate(self.coefficients):
-                coefficients[i] += val
-                coefficients[i] %= MOD
-            return Polynomial(coefficients)
-        else:
-            for i, val in enumerate(other.coefficients):
-                coefficients[i] += val
-                coefficients[i] %= MOD
-            return Polynomial(coefficients)
-
-
-    def __mul__(self, other):
-        coefficients_1 = self.coefficients
-        coefficients_2 = other.coefficients
-
-        if (self.degree < other.degree):
-            coefficients_1, coefficients_2 = coefficients_2, coefficients_1
-
-        coefficients = []
-
-        for i in range(self.degree + other.degree + 1):
-            summ = 0
-            for j in range(min(i + 1, len(coefficients_2))):
-                if i - j >= len(coefficients_1):
-                    continue
-                summ += coefficients_2[j] * coefficients_1[i - j]
-                summ %= MOD
-            coefficients.append(summ % MOD)
-
-        return Polynomial(coefficients)
-
-
-    def get_coefficient(self, ind):
-        return self.coefficients[ind]
-
-    def set_coefficient(self, ind, x):
-        self.coefficients[ind] = x
-
-    def interpolate(x_vals, y_vals):
-        p = Polynomial([0])
-
-        for i in range(len(y_vals)):
-            l = Polynomial([1])
-            for j in range(len(x_vals)):
-                if i != j:
-                    l = l * Polynomial([-x_vals[j], 1]) * Polynomial([inverse(x_vals[i] - x_vals[j])])
-            p = p + l * Polynomial([y_vals[i]])
-
-        return p
-
-
-def split(data, n, threshold):
+def split(data: IntData, n: int, threshold: int) -> list[IntData]:
+    '''Apply the Shamir's scheme and divide the file into parts.'''
 
     polynomials = []
 
@@ -192,14 +68,13 @@ def split(data, n, threshold):
         numbers = part.get_ints()
         for j in range(len(data.get_ints())):
             part.set_int(j, polynomials[j](i + 1))
-            #print(i + 1, j, polynomials[j](i + 1))
         part.set_x_val(i + 1)
         parts.append(part)
 
     return parts
 
 
-def split_command(path, n, threshold):
+def split_command(path: str, n: int, threshold: int) -> None:
 
     data = IntData(path)
 
@@ -223,13 +98,12 @@ def split_command(path, n, threshold):
             new_path = dirr + '/' + pref + str(i + 1) + '.' + suf
         else:
             new_path = pref + str(i + 1) + '.' + suf
-        #part.write()
         with open(new_path, 'wb') as file:
             pickle.dump(part, file)
-        #write_file(new_path, data)
 
 
-def bind(parts, threshold):
+def bind(parts: list[IntData], threshold: int) -> IntData:
+    '''Using the Shamir's scheme to merge the parts'''
 
     data = copy.copy(parts[0])
 
@@ -247,7 +121,7 @@ def bind(parts, threshold):
     return data
 
 
-def bind_command(path, threshold):
+def bind_command(path: str, threshold: int) -> None:
 
     path_parts = path.split('/')
     file_pref = path_parts[-1]
@@ -264,11 +138,6 @@ def bind_command(path, threshold):
                 with open(dirr + '/' + entry.name, 'rb') as file:
                     parts.append(pickle.load(file))
 
-    '''
-    for part in parts:
-        part.write()
-    '''
-
     if len(parts) < threshold:
         print("Parts less than threshold")
         sys.exit(1)
@@ -277,20 +146,6 @@ def bind_command(path, threshold):
 
     with open(path, mode="wb") as file:
         file.write(data.to_bytes())
-
-
-def test_copy(path):
-    data = IntData(path)
-
-    with open(path + '2', 'wb') as file:
-        pickle.dump(data, file)
-
-    with open(path + '2', 'rb') as file:
-        data = pickle.load(file)
-
-    with open(path + '3', mode="wb") as file:
-        file.write(data.to_bytes())
-
 
 
 parser = argparse.ArgumentParser(description="Splitting a file into several" \
@@ -309,8 +164,6 @@ parser.add_argument("t", type=int, help="Number of parts required for "      \
 args = parser.parse_args()
 
 match args.command:
-    case "test":
-        test_copy(args.path)
     case "bind":
         if 1 < args.t:
             bind_command(args.path, args.t)
