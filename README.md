@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/Pocepko/hocrux/graph/badge.svg?token=G7BMEY30U1)](https://codecov.io/gh/Pocepko/hocrux)
+[![codecov](https://codecov.io/gh/Pocepko/hocrux/branch/development/graph/badge.svg?token=G7BMEY30U1)](https://codecov.io/gh/Pocepko/hocrux)
 
 # Почепко Илья Вячеславович, БО5-253
 
