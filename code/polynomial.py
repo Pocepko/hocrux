@@ -41,6 +41,9 @@ class Polynomial:
             self.coefficients = coefficients
             self.degree = len(coefficients) - 1
 
+    def __eq__(self, other: 'Polynomial') -> bool:
+        return self.coefficients == other.coefficients
+
     def __call__(self, x: int) -> int:
         '''The value of the polynomial at point x.'''
         res = 0
