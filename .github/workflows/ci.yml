@@ -38,5 +38,8 @@ jobs:
       - name: Run usage tests
         run: |
           cd tests
+          pwd
+          ls
+          cat
           ./usage_test.sh
 
