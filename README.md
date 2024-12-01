@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/Pocepko/hocrux/graph/badge.svg?token=G7BMEY30U1)](https://codecov.io/gh/Pocepko/hocrux)
+
 # Почепко Илья Вячеславович, БО5-253
 
 # Hocrux - Реализация схемы разделения секрета Шамира
