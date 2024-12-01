@@ -64,5 +64,3 @@ hocrux/
    - `python3 hocrux split picture.png -n 5 3` - разделит файл `picture.png` на пять частей `picture1.png, ..., picture5.png`, так что его можно востановить по любым трём частям
    - `python3 hocrux.py bind picture 3` - восстанавливает исходный `picture.png` файл по трём частям название которых начинается на `picture`
 
-
-
